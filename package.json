@@ -1,0 +1,33 @@
+{
+  "name": "virus_notificator",
+  "version": "1.0.0",
+  "description": "A Platform",
+  "main": "index.js",
+  "dependencies": {
+    "@alicloud/pop-core": "^1.7.9",
+    "express": "^4.17.1",
+    "mongodb": "^3.5.2",
+    "node-schedule": "^1.3.2",
+    "nodemailer": "^6.4.2"
+  },
+  "devDependencies": {
+    "express": "^4.17.1",
+    "mongodb": "^3.5.2",
+    "node-schedule": "^1.3.2",
+    "nodemailer": "^6.4.2",
+    "utility": "^1.16.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HelipengTony/virus_notificator.git"
+  },
+  "author": "TonyHe",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/HelipengTony/virus_notificator/issues"
+  },
+  "homepage": "https://github.com/HelipengTony/virus_notificator#readme"
+}
