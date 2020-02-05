@@ -1,10 +1,9 @@
-TODO: 前端设计
-
 const express = require('express');
 const request = require('request');
 const mongo = require('mongodb').MongoClient;
 const nodemailer = require("nodemailer");
 const schedule = require('node-schedule');
+const mailFunc = require('./mail');
 var databaseUrl = 'mongodb://localhost:27017';
 
 
@@ -47,25 +46,18 @@ app.use(function (req, res, next) {
 /*  
     name: 取得 PHP 爬取数据
 */
+consoleMessage('开始请求最新数据', 'start');
 request('https://www.snapaper.com/vue/virus', function (error, response, data) {
     if (!error && response.statusCode == 200) {
         global.dataObject = JSON.parse(data.toString()); //获取
         global.requestStatus = true;
+        console.log('数据请求成功');
     } else {
         global.requestStatus = false;
+        console.log('数据请求失败');
     }
+    consoleMessage('结束请求最新数据', 'end');
 })
-
-schedule.scheduleJob('30 * * * * *', function () {
-    request('https://www.snapaper.com/vue/virus', function (error, response, data) {
-    if (!error && response.statusCode == 200) {
-        global.dataObject = JSON.parse(data.toString()); //获取
-        global.requestStatus = true;
-    } else {
-        global.requestStatus = false;
-    }
-})
-});
 
 
 /* 数据获取 Section */
@@ -168,7 +160,7 @@ app.get('/api/city/:city', function (req, res) {
     name: 邮件发送模板
 */
 var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
-    consoleMessage('准备开始发送邮件','start');
+    consoleMessage('准备开始发送欢迎邮件', 'start');
 
     let mailer = nodemailer.createTransport({
         host: "smtp.163.com",
@@ -193,7 +185,7 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
             console.log(err);
         } else {
             console.log("已接收到邮件: " + msg.accepted)
-            consoleMessage('发送邮件任务结束','end');
+            consoleMessage('发送欢迎邮件任务结束', 'end');
         }
     });
 }
@@ -202,9 +194,15 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
     name: 邮箱或短信订阅
     route: /subscribe/mail/:email/:province/:city
 */
-app.get('/subscribe/mail/:email/:province/:city', function (req, res) {
+app.post('/subscribe/mail/:email/:province/:city', function (req, res) {
 
-    consoleMessage('准备开始处理订阅','start');
+    let returnArray = {
+        status: false,
+        code: 0,
+        data: [],
+        msg: null
+    };
+
     //获取请求参数
     const params = req.params;
     //建立参数对象
@@ -222,88 +220,112 @@ app.get('/subscribe/mail/:email/:province/:city', function (req, res) {
         paramsObject.pro = params.province;
         paramsObject.city = params.city;
 
-        let returnArray = {
-            status: false,
-            code: 0,
-            data: [],
-            msg: null
-        };
-        if (global.requestStatus) {
+        if (global.dataObject.provinces_data[paramsObject.pro.toString()] !== undefined && global.dataObject.cities_data[paramsObject.city.toString()] !== undefined) {
+            if (global.requestStatus) {
 
-            //连接 MongoDB 数据库
-            mongo.connect(databaseUrl, {
-                useUnifiedTopology: true
-            }, function (err, db) {
-                if (err) {
-                    console.log(err);
-                    return;
-                } else {
-                    console.log("连接数据库!");
-                    var coll = db.db("notificator");
-                    //数据查重
-                    coll.collection("mail_users").find(paramsObject).toArray(function (err, result) {
-                        if (err) {
-                            console.log(err);
-                        } else {
-                            if (result.length) {
-                                console.log("有重复数据");
-                                let returnArray = {
-                                    status: false,
-                                    code: 0,
-                                    data: [],
-                                    msg: null
-                                };
-                                returnArray.code = 106;
-                                returnArray.msg = 'Already subscribed';
-                                returnArray.status = false;
-                                res.json(returnArray);
-                                db.close();
+                //连接 MongoDB 数据库
+                mongo.connect(databaseUrl, {
+                    useUnifiedTopology: true
+                }, function (err, db) {
+                    if (err) {
+                        console.log(err);
+                        return;
+                    } else {
+                        var coll = db.db("notificator");
+                        //数据查重
+                        coll.collection("mail_users").find({
+                            'email': paramsObject.email
+                        }).toArray(function (err, result) {
+                            if (err) {
+                                console.log(err);
                             } else {
-                                coll.collection("mail_users").insertOne({'email':paramsObject.email}, function (err, result) {
-                                    if (err) {
-                                        console.log(err);
-                                    } else {
-                                        let returnArray = {
-                                            status: false,
-                                            code: 0,
-                                            data: [],
-                                            msg: null
-                                        };
-                                        console.log("没有重复数据");
+                                if (result.length) {
+                                    console.log("有重复数据");
+                                    let returnArray = {
+                                        status: false,
+                                        code: 0,
+                                        data: [],
+                                        msg: null
+                                    };
+                                    returnArray.code = 106;
+                                    returnArray.msg = 'Already subscribed';
+                                    returnArray.status = false;
+                                    res.json(returnArray);
+                                    db.close();
+                                } else {
+                                    coll.collection("mail_users").insertOne(paramsObject, function (err, result) {
+                                        if (err) {
+                                            console.log(err);
+                                        } else {
+                                            let returnArray = {
+                                                status: false,
+                                                code: 0,
+                                                data: [],
+                                                msg: null
+                                            };
+                                            console.log("没有重复数据");
 
-                                        //发送欢迎邮件
-                                        sendEmail('2019-nCov Virus Tracking Subscription Test', 'Hi there, 感谢你订阅新型冠状病毒疫情动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油！', `Hi there<br/>感谢你订阅新型冠状动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油`, paramsObject.email);
+                                            //发送欢迎邮件
+                                            sendEmail('2019-nCov Virus Tracking Subscription Test', 'Hi there, 感谢你订阅新型冠状病毒疫情动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油！', `Hi there<br/>感谢你订阅新型冠状动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油`, paramsObject.email);
 
-                                        returnArray.code = 105;
-                                        returnArray.msg = 'Subscription was a Success';
-                                        returnArray.status = true;
-                                        res.json(returnArray);
-                                        db.close();
-                                        consoleMessage('结束处理订阅','end');
-                                    }
-                                });
+                                            returnArray.code = 105;
+                                            returnArray.msg = 'Subscription was a Success';
+                                            returnArray.status = true;
+                                            res.json(returnArray);
+                                            db.close();
+                                        }
+                                    });
+                                }
                             }
-                        }
-                    });
-                }
-            });
+                        });
+                    }
+                });
 
+            } else {
+                returnArray.code = 100;
+                returnArray.status = false;
+                returnArray.msg = 'Service is Unavailable';
+                res.json(returnArray);
+            }
         } else {
-            returnArray.code = 100;
+            returnArray.code = 107;
+            returnArray.msg = 'Incorrect City or Province Info';
             returnArray.status = false;
-            returnArray.msg = 'Service is Unavailable';
             res.json(returnArray);
         }
     } else {
         returnArray.code = 104;
         returnArray.msg = 'Email Address is Invalid';
         returnArray.status = false;
+        console.log(global.dataObject.test_data);
+        res.json(returnArray);
     }
 })
 /* 用户订阅 Section */
 
 
 /* 服务部署 Section */
+function scheduleTasks() {
+    schedule.scheduleJob('30 * * * * *', function () {
+        mailFunc();
+    });
+    schedule.scheduleJob('30 * * * * *', function () {
+        consoleMessage('开始请求最新数据', 'start');
+        request('https://www.snapaper.com/vue/virus', function (error, response, data) {
+            if (!error && response.statusCode == 200) {
+                global.dataObject = JSON.parse(data.toString()); //获取
+                global.requestStatus = true;
+                console.log('数据请求成功');
+            } else {
+                global.requestStatus = false;
+                console.log('数据请求失败');
+            }
+            consoleMessage('结束请求最新数据', 'end');
+        })
+    });
+}
+scheduleTasks();
+
 app.listen(3000, function () {
     console.log('app is listening at port 3000');
 });
