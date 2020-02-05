@@ -60,7 +60,7 @@ async function sendEmail(titleContent, textContent, htmlContent, receiver) {
                     msg: "已接收到每日推送邮件: " + msg.accepted
                 })
             }
-        }),30000)
+        }), 30000)
     })
 
     console.log(result.msg);
@@ -141,7 +141,7 @@ async function mailDaily() {
                                 city: false
                             };
 
-                            if (typeof(global.dataObject) !== undefined) { //获取到总数据
+                            if (typeof (global.dataObject) !== undefined) { //获取到总数据
                                 let dataNow = global.dataObject;
 
                                 //全国信息获取
@@ -173,38 +173,60 @@ async function mailDaily() {
                                 //城市信息获取
                                 if (typeof (dataNow.cities_data[receiverData.city.toString()]) !== undefined) { //获取到省份数据
                                     let dataNowTemp = dataNow.cities_data[receiverData.city.toString()];
-                                    receiverData.data.city = { //得到省份数据对象
-                                        name: receiverData.city.toString(),
-                                        confirm: parseInt(dataNowTemp.confirmed),
-                                        death: parseInt(dataNowTemp.death),
-                                        cured: parseInt(dataNowTemp.cured)
+                                    if (receiverData.city.toString() !== '无城市') {
+                                        receiverData.data.city = { //得到省份数据对象
+                                            name: receiverData.city.toString(),
+                                            confirm: parseInt(dataNowTemp.confirmed),
+                                            death: parseInt(dataNowTemp.death),
+                                            cured: parseInt(dataNowTemp.cured)
+                                        }
+                                        dataStatus.city = true;
+                                    } else {
+                                        dataStatus.city = false;
                                     }
-                                    dataStatus.city = true;
                                 } else { //未获取到省份数据
                                     dataStatus.city = false;
                                 }
 
-                                sendEmail('推送测试邮件', '这是测试', `
-                            <img src="https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg">
-                            <h3>全国数据</h3>
-                            <ul>
-                                <li>确诊:` + receiverData.data.country.confirm + `</li>
-                                <li>死亡:` + receiverData.data.country.death + `</li>
-                                <li>治愈:` + receiverData.data.country.cured + `</li>
-                            </ul>
-                            <h3>` + receiverData.province + `数据</h3>
-                            <ul>
-                                <li>确诊:` + receiverData.data.province.confirm + `</li>
-                                <li>死亡:` + receiverData.data.province.death + `</li>
-                                <li>治愈:` + receiverData.data.province.cured + `</li>
-                            </ul>
-                            <h3>` + receiverData.city + `数据</h3>
-                            <ul>
-                                <li>确诊:` + receiverData.data.city.confirm + `</li>
-                                <li>死亡:` + receiverData.data.city.death + `</li>
-                                <li>治愈:` + receiverData.data.city.cured + `</li>
-                            </ul>
-                            `, receiverData.email)
+                                if(dataStatus.city){
+                                    var htmlContent = `
+                                    <img src="https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg">
+                                    <h3>全国数据</h3>
+                                    <ul>
+                                        <li>确诊:` + receiverData.data.country.confirm + `</li>
+                                        <li>死亡:` + receiverData.data.country.death + `</li>
+                                        <li>治愈:` + receiverData.data.country.cured + `</li>
+                                    </ul>
+                                    <h3>` + receiverData.province + `数据</h3>
+                                    <ul>
+                                        <li>确诊:` + receiverData.data.province.confirm + `</li>
+                                        <li>死亡:` + receiverData.data.province.death + `</li>
+                                        <li>治愈:` + receiverData.data.province.cured + `</li>
+                                    </ul>
+                                    <h3>` + receiverData.city + `数据</h3>
+                                    <ul>
+                                        <li>确诊:` + receiverData.data.city.confirm + `</li>
+                                        <li>死亡:` + receiverData.data.city.death + `</li>
+                                        <li>治愈:` + receiverData.data.city.cured + `</li>
+                                    </ul>
+                                    `;
+                                }else{
+                                    var htmlContent = `
+                                    <img src="https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg">
+                                    <h3>全国数据</h3>
+                                    <ul>
+                                        <li>确诊:` + receiverData.data.country.confirm + `</li>
+                                        <li>死亡:` + receiverData.data.country.death + `</li>
+                                        <li>治愈:` + receiverData.data.country.cured + `</li>
+                                    </ul>
+                                    <h3>` + receiverData.province + `数据</h3>
+                                    <ul>
+                                        <li>确诊:` + receiverData.data.province.confirm + `</li>
+                                        <li>死亡:` + receiverData.data.province.death + `</li>
+                                        <li>治愈:` + receiverData.data.province.cured + `</li>
+                                    </ul>`
+                                }
+                                sendEmail('推送测试邮件', '这是测试', htmlContent, receiverData.email)
 
                             } else {
                                 dataStatus.total = false;

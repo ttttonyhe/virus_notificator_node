@@ -3,12 +3,17 @@ const request = require('request');
 const mongo = require('mongodb').MongoClient;
 const nodemailer = require("nodemailer");
 const schedule = require('node-schedule');
+const bodyParser = require('body-parser');
+const Feed = require('feed').Feed;
 const mailFunc = require('./mail');
 var databaseUrl = 'mongodb://localhost:27017';
 
 
 //新建 Express 实例
 var app = express();
+app.use(bodyParser.urlencoded({
+    extended: false
+}));
 
 var consoleMessage = function (title, type) {
     switch (type) {
@@ -30,19 +35,6 @@ var consoleMessage = function (title, type) {
 }
 
 
-/* 
-    name: 跨域允许设置
-*/
-app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
-    res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    res.header('Cache-Control', 'No-store');
-    next();
-});
-
-
 /*  
     name: 取得 PHP 爬取数据
 */
@@ -58,6 +50,80 @@ request('https://www.snapaper.com/vue/virus', function (error, response, data) {
     }
     consoleMessage('结束请求最新数据', 'end');
 })
+
+/* RSS Feed 生成 */
+app.get('/rss', function (req, res) {
+    const feed = new Feed({
+        title: "2019-nCov 疫情数据",
+        description: "2019-nCov 疫情数据实时更新推送",
+        id: "https://ncov.ouorz.com/",
+        link: "https://ncov.ouorz.com/",
+        copyright: "All rights reserved 2019, TonyHe",
+        author: {
+            name: "TonyHe",
+            email: "he@holptech.com",
+            link: "https://www.ouorz.com"
+        }
+    });
+    feed.addItem({
+        title: '全国数据',
+        content: `<h3>全国数据</h3>
+    <ul>
+        <li>确诊:` + global.dataObject.total_confirmed + `</li>
+        <li>死亡:` + global.dataObject.total_death + `</li>
+        <li>治愈:` + global.dataObject.total_cured + `</li>
+    </ul>`
+    });
+
+    //添加省份
+    (Object.values(global.dataObject.provinces_data)).forEach(pro => {
+        feed.addItem({
+            title: pro.provinceName + '数据',
+            content: `<h3>` + pro.provinceName + `数据</h3>
+    <ul>
+        <li>确诊:` + pro.confirmed + `</li>
+        <li>死亡:` + pro.death + `</li>
+        <li>治愈:` + pro.cured + `</li>
+    </ul>`
+        });
+        //添加城市
+        (Object.values(pro.citiesName)).forEach(city => {
+            feed.addItem({
+                title: city + '数据',
+                content: `<h3>` + city + `数据</h3>
+    <ul>
+        <li>确诊:` + global.dataObject.cities_data[city].confirmed + `</li>
+        <li>死亡:` + global.dataObject.cities_data[city].death + `</li>
+        <li>治愈:` + global.dataObject.cities_data[city].cured + `</li>
+    </ul>`
+            });
+        })
+    })
+
+    feed.addCategory("Data");
+
+    feed.addContributor({
+        name: "丁香园·丁香医生",
+        link: "https://ncov.dxy.cn/ncovh5/view/pneumonia"
+    });
+
+    res.set('Content-Type', 'text/xml');
+    res.send(feed.rss2());
+});
+/* RSS Feed 生成 */
+
+/* 
+    name: 跨域允许设置
+*/
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header('Cache-Control', 'No-store');
+    next();
+});
+
 
 
 /* 数据获取 Section */
@@ -192,9 +258,9 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
 
 /* 
     name: 邮箱或短信订阅
-    route: /subscribe/mail/:email/:province/:city
+    route: /subscribe/mail
 */
-app.post('/subscribe/mail/:email/:province/:city', function (req, res) {
+app.post('/subscribe/mail', function (req, res) {
 
     let returnArray = {
         status: false,
@@ -204,7 +270,336 @@ app.post('/subscribe/mail/:email/:province/:city', function (req, res) {
     };
 
     //获取请求参数
-    const params = req.params;
+    const params = req.body;
+    //建立参数对象
+    var paramsObject = {
+        email: 'xxx@xxx.com'
+    }
+    //电子邮件地址验证
+    var emailTest = /^\w+((-\w+)|(\.\w+))*\@[A-Za-z0-9]+((\.|-)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/;
+    if (emailTest.test(params.email)) {
+
+        //保存参数
+        paramsObject.email = params.email;
+        if (global.requestStatus) {
+
+            //连接 MongoDB 数据库
+            mongo.connect(databaseUrl, {
+                useUnifiedTopology: true
+            }, function (err, db) {
+                if (err) {
+                    console.log(err);
+                    return;
+                } else {
+                    var coll = db.db("notificator");
+                    //数据查重
+                    coll.collection("mail_users").find({
+                        'email': paramsObject.email
+                    }).toArray(function (err, result) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            if (result.length) {
+                                console.log("有重复数据");
+                                let returnArray = {
+                                    status: false,
+                                    code: 0,
+                                    data: [],
+                                    msg: null
+                                };
+                                returnArray.code = 106;
+                                returnArray.msg = '邮箱地址已订阅';
+                                returnArray.status = false;
+                                res.json(returnArray);
+                                db.close();
+                            } else {
+                                coll.collection("mail_users").insertOne(paramsObject, function (err, result) {
+                                    if (err) {
+                                        console.log(err);
+                                    } else {
+                                        let returnArray = {
+                                            status: false,
+                                            code: 0,
+                                            data: [],
+                                            msg: null
+                                        };
+                                        console.log("没有重复数据");
+
+                                        //发送欢迎邮件
+                                        sendEmail('2019-nCov Virus Tracking Subscription Test', 'Hi there, 感谢你订阅新型冠状病毒疫情动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油！', `Hi there<br/>感谢你订阅新型冠状动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油`, paramsObject.email);
+
+                                        returnArray.code = 105;
+                                        returnArray.msg = '邮件推送订阅成功';
+                                        returnArray.status = true;
+                                        res.json(returnArray);
+                                        db.close();
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+        } else {
+            returnArray.code = 100;
+            returnArray.status = false;
+            returnArray.msg = '服务器错误，请联系管理员';
+            res.json(returnArray);
+        }
+    } else {
+        returnArray.code = 104;
+        returnArray.msg = '电子邮件地址错误';
+        returnArray.status = false;
+        console.log(global.dataObject.test_data);
+        res.json(returnArray);
+    }
+})
+
+/* 
+    name: 取消订阅
+    route: /unsubscribe/mail
+*/
+app.post('/unsubscribe/mail', function (req, res) {
+
+    let returnArray = {
+        status: false,
+        code: 0,
+        data: [],
+        msg: null
+    };
+
+    //获取请求参数
+    const params = req.body;
+    //建立参数对象
+    var paramsObject = {
+        email: 'xxx@xxx.com'
+    }
+    //电子邮件地址验证
+    var emailTest = /^\w+((-\w+)|(\.\w+))*\@[A-Za-z0-9]+((\.|-)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/;
+    if (emailTest.test(params.email)) {
+
+        //保存参数
+        paramsObject.email = params.email;
+        if (global.requestStatus) {
+
+            //连接 MongoDB 数据库
+            mongo.connect(databaseUrl, {
+                useUnifiedTopology: true
+            }, function (err, db) {
+                if (err) {
+                    console.log(err);
+                    return;
+                } else {
+                    var coll = db.db("notificator");
+                    //数据查重
+                    coll.collection("mail_users").find({
+                        'email': paramsObject.email
+                    }).toArray(function (err, result) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            if (result.length) {
+                                console.log("有重复数据");
+
+                                //删除数据
+                                coll.collection("mail_users").deleteOne({
+                                    "email": paramsObject.email
+                                }, function (err) {
+                                    if (err) {
+                                        console.log(err);
+                                    } else {
+                                        let returnArray = {
+                                            status: true,
+                                            code: 0,
+                                            data: [],
+                                            msg: null
+                                        };
+                                        returnArray.code = 105;
+                                        returnArray.msg = '你已成功取消订阅';
+                                        returnArray.status = true;
+                                        res.json(returnArray);
+                                        db.close();
+                                    }
+                                })
+                            } else {
+                                console.log("没有可以删除的数据");
+                                let returnArray = {
+                                    status: false,
+                                    code: 0,
+                                    data: [],
+                                    msg: null
+                                };
+                                returnArray.code = 106;
+                                returnArray.msg = '邮箱地址未订阅';
+                                returnArray.status = false;
+                                res.json(returnArray);
+                                db.close();
+                            }
+                        }
+                    });
+                }
+            });
+
+        } else {
+            returnArray.code = 100;
+            returnArray.status = false;
+            returnArray.msg = '服务器错误，请联系管理员';
+            res.json(returnArray);
+        }
+    } else {
+        returnArray.code = 104;
+        returnArray.msg = '电子邮件地址错误';
+        returnArray.status = false;
+        console.log(global.dataObject.test_data);
+        res.json(returnArray);
+    }
+})
+
+
+/* 
+    name: 邮箱订阅邮箱地址修改
+    route: /subscribe/mail/edit/:original_email/to/:current_email/:province/:city
+*/
+app.post('/subscribe/mail/edit', function (req, res) {
+
+    let returnArray = {
+        status: false,
+        code: 0,
+        data: [],
+        msg: null
+    };
+
+    //获取请求参数
+    const params = req.body;
+    //建立参数对象
+    var paramsObject = {
+        currentEmail: 'xxx@xxx.com',
+        originEmail: 'xxx@xxx.com'
+    }
+
+    //电子邮件地址验证
+    var emailTest = /^\w+((-\w+)|(\.\w+))*\@[A-Za-z0-9]+((\.|-)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/;
+    if (emailTest.test(params.original_email) && emailTest.test(params.current_email)) {
+
+        //保存参数
+        paramsObject.originEmail = params.original_email;
+        paramsObject.currentEmail = params.current_email;
+
+        if (global.requestStatus) {
+
+            //连接 MongoDB 数据库
+            mongo.connect(databaseUrl, {
+                useUnifiedTopology: true
+            }, function (err, db) {
+                if (err) {
+                    console.log(err);
+                    return;
+                } else {
+                    var coll = db.db("notificator");
+                    //数据查重
+                    coll.collection("mail_users").find({
+                        "email": paramsObject.originEmail
+                    }).toArray(function (err, result) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            if (result.length) { //源邮箱存在记录
+                                coll.collection("mail_users").find({
+                                    "email": paramsObject.currentEmail
+                                }).toArray(function (err, result) {
+                                    if (err) {
+                                        console.log(err);
+                                    } else {
+                                        if (result.length) { //现邮箱存在记录
+                                            console.log("修改后的邮箱已订阅");
+                                            let returnArray = {
+                                                status: false,
+                                                code: 0,
+                                                data: [],
+                                                msg: null
+                                            };
+                                            returnArray.code = 106;
+                                            returnArray.msg = '无法修改至已订阅邮箱';
+                                            returnArray.status = false;
+                                            res.json(returnArray);
+                                            db.close();
+                                        } else {
+                                            //更新数据
+                                            coll.collection("mail_users").updateOne({
+                                                "email": paramsObject.originEmail
+                                            }, {
+                                                $set: {
+                                                    "email": paramsObject.currentEmail
+                                                }
+                                            }, function (err) {
+                                                if (err) {
+                                                    console.log(err);
+                                                } else {
+                                                    let returnArray = {
+                                                        status: false,
+                                                        code: 0,
+                                                        data: [],
+                                                        msg: null
+                                                    };
+                                                    returnArray.code = 105;
+                                                    returnArray.msg = '邮件地址修改成功';
+                                                    returnArray.status = true;
+                                                    res.json(returnArray);
+                                                    db.close();
+                                                }
+                                            })
+                                        }
+                                    }
+                                })
+                            } else {
+                                console.log("邮件并未订阅");
+                                let returnArray = {
+                                    status: false,
+                                    code: 0,
+                                    data: [],
+                                    msg: null
+                                };
+                                returnArray.code = 106;
+                                returnArray.msg = '原邮箱并未订阅';
+                                returnArray.status = false;
+                                res.json(returnArray);
+                                db.close();
+                            }
+                        }
+                    });
+                }
+            });
+
+        } else {
+            returnArray.code = 100;
+            returnArray.status = false;
+            returnArray.msg = '服务器错误，请联系管理员';
+            res.json(returnArray);
+        }
+    } else {
+        returnArray.code = 104;
+        returnArray.msg = '邮箱地址不正确';
+        returnArray.status = false;
+        res.json(returnArray);
+    }
+})
+
+/* 
+    name: 邮箱订阅省份城市修改
+    route: /subscribe/mail/edit/info/:email/now/:province/:city
+*/
+app.post('/subscribe/mail/edit/info', function (req, res) {
+
+    let returnArray = {
+        status: false,
+        code: 0,
+        data: [],
+        msg: null
+    };
+
+    //获取请求参数
+    const params = req.body;
     //建立参数对象
     var paramsObject = {
         email: 'xxx@xxx.com',
@@ -213,14 +608,14 @@ app.post('/subscribe/mail/:email/:province/:city', function (req, res) {
     }
     //电子邮件地址验证
     var emailTest = /^\w+((-\w+)|(\.\w+))*\@[A-Za-z0-9]+((\.|-)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/;
-    if (emailTest.test(req.params.email)) {
+    if (emailTest.test(params.email)) {
 
         //保存参数
         paramsObject.email = params.email;
         paramsObject.pro = params.province;
         paramsObject.city = params.city;
 
-        if (global.dataObject.provinces_data[paramsObject.pro.toString()] !== undefined && global.dataObject.cities_data[paramsObject.city.toString()] !== undefined) {
+        if (global.dataObject.provinces_data[paramsObject.pro.toString()] !== undefined && (global.dataObject.cities_data[paramsObject.city.toString()] !== undefined || paramsObject.city.toString() == '无城市')) {
             if (global.requestStatus) {
 
                 //连接 MongoDB 数据库
@@ -234,26 +629,21 @@ app.post('/subscribe/mail/:email/:province/:city', function (req, res) {
                         var coll = db.db("notificator");
                         //数据查重
                         coll.collection("mail_users").find({
-                            'email': paramsObject.email
+                            "email": paramsObject.email
                         }).toArray(function (err, result) {
                             if (err) {
                                 console.log(err);
                             } else {
-                                if (result.length) {
-                                    console.log("有重复数据");
-                                    let returnArray = {
-                                        status: false,
-                                        code: 0,
-                                        data: [],
-                                        msg: null
-                                    };
-                                    returnArray.code = 106;
-                                    returnArray.msg = 'Already subscribed';
-                                    returnArray.status = false;
-                                    res.json(returnArray);
-                                    db.close();
-                                } else {
-                                    coll.collection("mail_users").insertOne(paramsObject, function (err, result) {
+                                if (result.length) { //源邮箱存在记录
+                                    //更新数据
+                                    coll.collection("mail_users").updateOne({
+                                        "email": paramsObject.email
+                                    }, {
+                                        $set: {
+                                            "pro": paramsObject.pro,
+                                            "city": paramsObject.city
+                                        }
+                                    }, function (err) {
                                         if (err) {
                                             console.log(err);
                                         } else {
@@ -263,18 +653,26 @@ app.post('/subscribe/mail/:email/:province/:city', function (req, res) {
                                                 data: [],
                                                 msg: null
                                             };
-                                            console.log("没有重复数据");
-
-                                            //发送欢迎邮件
-                                            sendEmail('2019-nCov Virus Tracking Subscription Test', 'Hi there, 感谢你订阅新型冠状病毒疫情动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油！', `Hi there<br/>感谢你订阅新型冠状动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油`, paramsObject.email);
-
                                             returnArray.code = 105;
-                                            returnArray.msg = 'Subscription was a Success';
+                                            returnArray.msg = '数据源修改成功';
                                             returnArray.status = true;
                                             res.json(returnArray);
                                             db.close();
                                         }
-                                    });
+                                    })
+                                } else {
+                                    console.log("没有存在邮箱数据");
+                                    let returnArray = {
+                                        status: false,
+                                        code: 0,
+                                        data: [],
+                                        msg: null
+                                    };
+                                    returnArray.code = 106;
+                                    returnArray.msg = '邮箱并未订阅';
+                                    returnArray.status = false;
+                                    res.json(returnArray);
+                                    db.close();
                                 }
                             }
                         });
@@ -284,29 +682,117 @@ app.post('/subscribe/mail/:email/:province/:city', function (req, res) {
             } else {
                 returnArray.code = 100;
                 returnArray.status = false;
-                returnArray.msg = 'Service is Unavailable';
+                returnArray.msg = '服务器错误，请联系管理员';
                 res.json(returnArray);
             }
         } else {
             returnArray.code = 107;
-            returnArray.msg = 'Incorrect City or Province Info';
+            returnArray.msg = '省份或城市信息错误';
             returnArray.status = false;
             res.json(returnArray);
         }
     } else {
         returnArray.code = 104;
-        returnArray.msg = 'Email Address is Invalid';
+        returnArray.msg = '邮箱地址错误';
         returnArray.status = false;
-        console.log(global.dataObject.test_data);
         res.json(returnArray);
     }
 })
+
 /* 用户订阅 Section */
+
+/* 订阅判断 Section */
+/* 
+    name: 判断邮箱是否订阅
+    route: /verify/mail/exist/:email
+*/
+app.get('/verify/mail/exist/:email', function (req, res) {
+
+    let returnArray = {
+        status: false,
+        code: 0,
+        data: [],
+        msg: null
+    };
+
+    //获取请求参数
+    const params = req.params;
+    //建立参数对象
+    var paramsObject = {
+        email: 'xxx@xxx.com'
+    }
+    //电子邮件地址验证
+    var emailTest = /^\w+((-\w+)|(\.\w+))*\@[A-Za-z0-9]+((\.|-)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/;
+    if (emailTest.test(params.email)) {
+
+        //保存参数
+        paramsObject.email = params.email;
+        //连接 MongoDB 数据库
+        mongo.connect(databaseUrl, {
+            useUnifiedTopology: true
+        }, function (err, db) {
+            if (err) {
+                console.log(err);
+                return;
+            } else {
+                var coll = db.db("notificator");
+                //数据查重
+                coll.collection("mail_users").find({
+                    "email": paramsObject.email
+                }).toArray(function (err, result) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        if (result.length) { //源邮箱存在记录
+
+                            let returnArray = {
+                                status: false,
+                                code: 0,
+                                data: {},
+                                msg: null
+                            };
+                            returnArray.code = 105;
+                            returnArray.msg = 'Subscriber';
+                            returnArray.status = true;
+                            returnArray.data = {
+                                email: result[0]['email'],
+                                province: result[0]['pro'],
+                                city: result[0]['city']
+                            }
+                            res.json(returnArray);
+                            db.close();
+                        } else {
+                            console.log("没有存在邮箱数据");
+                            let returnArray = {
+                                status: false,
+                                code: 0,
+                                data: [],
+                                msg: null
+                            };
+                            returnArray.code = 106;
+                            returnArray.msg = 'Visitor';
+                            returnArray.status = false;
+                            res.json(returnArray);
+                            db.close();
+                        }
+                    }
+                });
+            }
+        });
+
+    } else {
+        returnArray.code = 104;
+        returnArray.msg = 'Email Address is Invalid';
+        returnArray.status = false;
+        res.json(returnArray);
+    }
+})
+/* 订阅判断 Section */
 
 
 /* 服务部署 Section */
 function scheduleTasks() {
-    schedule.scheduleJob('30 * * * * *', function () {
+    schedule.scheduleJob('* * 11 * * *', function () {
         mailFunc();
     });
     schedule.scheduleJob('30 * * * * *', function () {
