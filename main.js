@@ -229,17 +229,17 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
     consoleMessage('准备开始发送欢迎邮件', 'start');
 
     let mailer = nodemailer.createTransport({
-        host: "smtp.163.com",
+        host: "smtpdm.aliyun.com",
         port: 465,
         secure: true, // upgrade later with STARTTLS
         auth: {
-            user: "18080850614@163.com",
-            pass: "Goodhlp616877"
+            user: "noreply@eugrade.com",
+            pass: "j945dz7LAHGywdA"
         }
     });
 
-    var message = {
-        from: "18080850614@163.com",
+    let message = {
+        from: "noreply@eugrade.com",
         to: receiver,
         subject: titleContent,
         text: textContent,
@@ -326,7 +326,7 @@ app.post('/subscribe/mail', function (req, res) {
                                         console.log("没有重复数据");
 
                                         //发送欢迎邮件
-                                        sendEmail('2019-nCov Virus Tracking Subscription Test', 'Hi there, 感谢你订阅新型冠状病毒疫情动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油！', `Hi there<br/>感谢你订阅新型冠状动态每日推送。你将在本日或明日内晚些时候收到我们为您准备的数据报表，武汉加油`, paramsObject.email);
+                                        sendEmail('关于新型冠状病毒疫情数据推送的订阅通知', '感谢你订阅新型冠状病毒疫情数据动态每日推送服务，你将在每天的23:00收到我们为您准备的包括全国数据与你所关注的省份/城市数据报表。湖北加油，中国加油。', `感谢你订阅新型冠状病毒疫情数据动态每日推送服务，你将在每天的 <b>23:00</b> 收到我们为您准备的包括 <b>全国数据</b> 与你所关注的 <b>省份/城市</b> 数据报表。<br/>湖北加油，中国加油。`, paramsObject.email);
 
                                         returnArray.code = 105;
                                         returnArray.msg = '邮件推送订阅成功';
@@ -792,7 +792,7 @@ app.get('/verify/mail/exist/:email', function (req, res) {
 
 /* 服务部署 Section */
 function scheduleTasks() {
-    schedule.scheduleJob('* * 11 * * *', function () {
+    schedule.scheduleJob('* * 23 * * *', function () {
         mailFunc();
     });
     schedule.scheduleJob('30 * * * * *', function () {
