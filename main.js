@@ -1,3 +1,10 @@
+/*
+    name: Server-Side of Virus Notificator
+    author: TonyHe
+    link: https://www.ouorz.com
+    last Update: 6-2-2020
+*/
+
 const express = require('express');
 const request = require('request');
 const mongo = require('mongodb').MongoClient;
@@ -11,10 +18,15 @@ var databaseUrl = 'mongodb://localhost:27017';
 
 //新建 Express 实例
 var app = express();
+
+
+//处理 POST 请求
 app.use(bodyParser.urlencoded({
     extended: false
 }));
 
+
+//控制台输出模板
 var consoleMessage = function (title, type) {
     switch (type) {
         case 'start':
@@ -170,6 +182,8 @@ app.get('/rss', function (req, res) {
 });
 /* RSS Feed 路由 */
 
+
+
 /* 
     name: 跨域允许设置
 */
@@ -184,7 +198,8 @@ app.use(function (req, res, next) {
 
 
 
-/* 数据获取 Section */
+/* 数据获取及 API Section */
+
 /* 
     name: 全部数据获取
     route: /api/all
@@ -275,7 +290,8 @@ app.get('/api/city/:city', function (req, res) {
         res.json(returnArray);
     }
 });
-/* 数据获取 Section */
+/* 数据获取及 API Section */
+
 
 
 /* 用户订阅 Section */
@@ -292,7 +308,7 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
         secure: true, // upgrade later with STARTTLS
         auth: {
             user: "noreply@eugrade.com",
-            pass: "j945dz7LAHGywdA"
+            pass: "xxx"
         }
     });
 
@@ -317,6 +333,7 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
 /* 
     name: 邮箱或短信订阅
     route: /subscribe/mail
+    params: email
 */
 app.post('/subscribe/mail', function (req, res) {
 
@@ -417,6 +434,7 @@ app.post('/subscribe/mail', function (req, res) {
 /* 
     name: 取消订阅
     route: /unsubscribe/mail
+    params: email
 */
 app.post('/unsubscribe/mail', function (req, res) {
 
@@ -517,7 +535,8 @@ app.post('/unsubscribe/mail', function (req, res) {
 
 /* 
     name: 邮箱订阅邮箱地址修改
-    route: /subscribe/mail/edit/:original_email/to/:current_email/:province/:city
+    route: /subscribe/mail/edit
+    params: original_email/current_email/province/city
 */
 app.post('/subscribe/mail/edit', function (req, res) {
 
@@ -643,9 +662,11 @@ app.post('/subscribe/mail/edit', function (req, res) {
     }
 })
 
+
 /* 
     name: 邮箱订阅省份城市修改
-    route: /subscribe/mail/edit/info/:email/now/:province/:city
+    route: /subscribe/mail/edit/info/
+    params: email/province/city
 */
 app.post('/subscribe/mail/edit/info', function (req, res) {
 
@@ -757,7 +778,6 @@ app.post('/subscribe/mail/edit/info', function (req, res) {
     }
 })
 
-/* 用户订阅 Section */
 
 /* 订阅判断 Section */
 /* 
@@ -847,8 +867,13 @@ app.get('/verify/mail/exist/:email', function (req, res) {
 })
 /* 订阅判断 Section */
 
+/* 用户订阅 Section */
+
+
 
 /* 服务部署 Section */
+
+/* 定时作业 Section */
 function scheduleTasks() {
     schedule.scheduleJob('0 0 23 * * *', function () {
         mailFunc();
@@ -870,6 +895,7 @@ function scheduleTasks() {
     });
 }
 scheduleTasks();
+/* 定时作业 Section */
 
 app.listen(2333, function () {
     console.log('app is listening at port 2333');

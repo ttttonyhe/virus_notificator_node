@@ -1,27 +1,14 @@
+/*
+    name: Server-Side Mailing Function of Virus Notificator
+    author: TonyHe
+    link: https://www.ouorz.com
+    last Update: 6-2-2020
+*/
+
 const request = require('request');
 const mongo = require('mongodb').MongoClient;
 const nodemailer = require("nodemailer");
-const schedule = require('node-schedule');
 var databaseUrl = 'mongodb://localhost:27017';
-
-var consoleMessage = function (title, type) {
-    switch (type) {
-        case 'start':
-            var sendDate = new Date();
-            console.log('\n');
-            console.log('-----------' + sendDate.toLocaleTimeString() + '-----------');
-            console.log('----------' + title + '-----------');
-            console.log('\n');
-            break;
-        case 'end':
-            var sendDate = new Date();
-            console.log('\n');
-            console.log('-----------' + sendDate.toLocaleTimeString() + '-----------');
-            console.log('----------' + title + '-----------');
-            console.log('\n');
-            break;
-    }
-}
 
 
 /*
@@ -34,7 +21,7 @@ async function sendEmail(titleContent, textContent, htmlContent, receiver) {
         secure: true, // upgrade later with STARTTLS
         auth: {
             user: "noreply@eugrade.com",
-            pass: "j945dz7LAHGywdA"
+            pass: "xxx"
         }
     });
 
