@@ -44,6 +44,7 @@ request('https://www.snapaper.com/vue/virus', function (error, response, data) {
         global.dataObject = JSON.parse(data.toString()); //获取
         global.requestStatus = true;
         console.log('数据请求成功');
+        global.feedData = getFeed();
     } else {
         global.requestStatus = false;
         console.log('数据请求失败');
@@ -51,14 +52,20 @@ request('https://www.snapaper.com/vue/virus', function (error, response, data) {
     consoleMessage('结束请求最新数据', 'end');
 })
 
-/* RSS Feed 生成 */
-app.get('/rss', function (req, res) {
+var getFeed = function () {
+    /* RSS Feed 生成 */
     const feed = new Feed({
         title: "2019-nCov 疫情数据",
         description: "2019-nCov 疫情数据实时更新推送",
         id: "https://ncov.ouorz.com/",
         link: "https://ncov.ouorz.com/",
+        image: "https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg",
+        favicon: "https://ncov.ouorz.com/favicon.ico",
         copyright: "All rights reserved 2019, TonyHe",
+        feedLinks: {
+            json: "https://node.ouorz.com/json",
+            atom: "https://node.ouorz.com/atom"
+        },
         author: {
             name: "TonyHe",
             email: "he@holptech.com",
@@ -67,6 +74,21 @@ app.get('/rss', function (req, res) {
     });
     feed.addItem({
         title: '全国数据',
+        id: '全国数据',
+        link: 'https://node.ouorz.com/api/all',
+        description: '全国数据',
+        author: [{
+            name: "TonyHe",
+            email: "he@holptech.com",
+            link: "https://www.ouorz.com"
+        }],
+        contributor: [{
+            name: "丁香园·丁香医生",
+            email: "johancruyff@example.com",
+            link: "https://ncov.dxy.cn/ncovh5/view/pneumonia"
+        }],
+        date: new Date(),
+        image: 'https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg',
         content: `<h3>全国数据</h3>
     <ul>
         <li>确诊:` + global.dataObject.total_confirmed + `</li>
@@ -79,6 +101,21 @@ app.get('/rss', function (req, res) {
     (Object.values(global.dataObject.provinces_data)).forEach(pro => {
         feed.addItem({
             title: pro.provinceName + '数据',
+            id: pro.provinceName + '数据',
+            link: 'https://node.ouorz.com/api/all',
+            description: pro.provinceName + '数据',
+            author: [{
+                name: "TonyHe",
+                email: "he@holptech.com",
+                link: "https://www.ouorz.com"
+            }],
+            contributor: [{
+                name: "丁香园·丁香医生",
+                email: "johancruyff@example.com",
+                link: "https://ncov.dxy.cn/ncovh5/view/pneumonia"
+            }],
+            date: new Date(),
+            image: 'https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg',
             content: `<h3>` + pro.provinceName + `数据</h3>
     <ul>
         <li>确诊:` + pro.confirmed + `</li>
@@ -90,6 +127,21 @@ app.get('/rss', function (req, res) {
         (Object.values(pro.citiesName)).forEach(city => {
             feed.addItem({
                 title: city + '数据',
+                id: city + '数据',
+                link: 'https://node.ouorz.com/api/all',
+                description: city + '数据',
+                author: [{
+                    name: "TonyHe",
+                    email: "he@holptech.com",
+                    link: "https://www.ouorz.com"
+                }],
+                contributor: [{
+                    name: "丁香园·丁香医生",
+                    email: "johancruyff@example.com",
+                    link: "https://ncov.dxy.cn/ncovh5/view/pneumonia"
+                }],
+                date: new Date(),
+                image: 'https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg',
                 content: `<h3>` + city + `数据</h3>
     <ul>
         <li>确诊:` + global.dataObject.cities_data[city].confirmed + `</li>
@@ -104,13 +156,19 @@ app.get('/rss', function (req, res) {
 
     feed.addContributor({
         name: "丁香园·丁香医生",
+        email: "johancruyff@example.com",
         link: "https://ncov.dxy.cn/ncovh5/view/pneumonia"
     });
+    /* RSS Feed 生成 */
+    return feed;
+}
 
+/* RSS Feed 路由 */
+app.get('/rss', function (req, res) {
     res.set('Content-Type', 'text/xml');
-    res.send(feed.rss2());
+    res.send(global.feedData.rss2());
 });
-/* RSS Feed 生成 */
+/* RSS Feed 路由 */
 
 /* 
     name: 跨域允许设置
@@ -792,7 +850,7 @@ app.get('/verify/mail/exist/:email', function (req, res) {
 
 /* 服务部署 Section */
 function scheduleTasks() {
-    schedule.scheduleJob('* * 23 * * *', function () {
+    schedule.scheduleJob('0 0 23 * * *', function () {
         mailFunc();
     });
     schedule.scheduleJob('30 * * * * *', function () {
@@ -802,6 +860,7 @@ function scheduleTasks() {
                 global.dataObject = JSON.parse(data.toString()); //获取
                 global.requestStatus = true;
                 console.log('数据请求成功');
+                global.feedData = getFeed();
             } else {
                 global.requestStatus = false;
                 console.log('数据请求失败');
@@ -812,7 +871,7 @@ function scheduleTasks() {
 }
 scheduleTasks();
 
-app.listen(3000, function () {
-    console.log('app is listening at port 3000');
+app.listen(2333, function () {
+    console.log('app is listening at port 2333');
 });
 /* 服务部署 Section */
