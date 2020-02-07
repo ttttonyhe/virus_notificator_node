@@ -13,7 +13,7 @@ const schedule = require('node-schedule');
 const bodyParser = require('body-parser');
 const Feed = require('feed').Feed;
 const mailFunc = require('./mail');
-var databaseUrl = 'mongodb://localhost:27017';
+var databaseUrl = 'mongodb://xxx:xxx@localhost:27017';
 
 
 //新建 Express 实例
@@ -111,6 +111,16 @@ var getFeed = function () {
 
     //添加省份
     (Object.values(global.dataObject.provinces_data)).forEach(pro => {
+        global.feedProvinceCities = ''; //城市数据，加入到省份内容中
+        //添加城市
+        (Object.values(pro.citiesName)).forEach(city => {
+            global.feedProvinceCities += `<h3>` + city + `数据</h3>
+                <ul>
+                    <li>确诊:` + global.dataObject.cities_data[city].confirmed + `</li>
+                    <li>死亡:` + global.dataObject.cities_data[city].death + `</li>
+                    <li>治愈:` + global.dataObject.cities_data[city].cured + `</li>
+                </ul>`;
+        })
         feed.addItem({
             title: pro.provinceName + '数据',
             id: pro.provinceName + '数据',
@@ -129,46 +139,19 @@ var getFeed = function () {
             date: new Date(),
             image: 'https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg',
             content: `<h3>` + pro.provinceName + `数据</h3>
-    <ul>
-        <li>确诊:` + pro.confirmed + `</li>
-        <li>死亡:` + pro.death + `</li>
-        <li>治愈:` + pro.cured + `</li>
-    </ul>`
+                <ul>
+                    <li>总确诊:` + pro.confirmed + `</li>
+                    <li>总死亡:` + pro.death + `</li>
+                    <li>总治愈:` + pro.cured + `</li>
+                </ul>` + global.feedProvinceCities
         });
-        //添加城市
-        (Object.values(pro.citiesName)).forEach(city => {
-            feed.addItem({
-                title: city + '数据',
-                id: city + '数据',
-                link: 'https://node.ouorz.com/api/all',
-                description: city + '数据',
-                author: [{
-                    name: "TonyHe",
-                    email: "he@holptech.com",
-                    link: "https://www.ouorz.com"
-                }],
-                contributor: [{
-                    name: "丁香园·丁香医生",
-                    email: "johancruyff@example.com",
-                    link: "https://ncov.dxy.cn/ncovh5/view/pneumonia"
-                }],
-                date: new Date(),
-                image: 'https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg',
-                content: `<h3>` + city + `数据</h3>
-    <ul>
-        <li>确诊:` + global.dataObject.cities_data[city].confirmed + `</li>
-        <li>死亡:` + global.dataObject.cities_data[city].death + `</li>
-        <li>治愈:` + global.dataObject.cities_data[city].cured + `</li>
-    </ul>`
-            });
-        })
     })
 
     feed.addCategory("Data");
 
     feed.addContributor({
         name: "丁香园·丁香医生",
-        email: "johancruyff@example.com",
+        email: "he@holptech.com",
         link: "https://ncov.dxy.cn/ncovh5/view/pneumonia"
     });
     /* RSS Feed 生成 */
@@ -188,7 +171,6 @@ app.get('/rss', function (req, res) {
     name: 跨域允许设置
 */
 app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
     res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
     res.header("Access-Control-Allow-Headers", "X-Requested-With");
     res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -205,6 +187,7 @@ app.use(function (req, res, next) {
     route: /api/all
 */
 app.get('/api/all', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
     let returnArray = {
         status: false,
         code: 0,
@@ -230,6 +213,7 @@ app.get('/api/all', function (req, res) {
     route: /api/province/:province
 */
 app.get('/api/province/:province', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
     //获取请求参数
     const params = req.params;
     //建立参数对象
@@ -264,6 +248,7 @@ app.get('/api/province/:province', function (req, res) {
     route: /api/city/:city
 */
 app.get('/api/city/:city', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
     //获取请求参数
     const params = req.params;
     //建立参数对象
@@ -303,17 +288,17 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
     consoleMessage('准备开始发送欢迎邮件', 'start');
 
     let mailer = nodemailer.createTransport({
-        host: "smtpdm.aliyun.com",
-        port: 465,
-        secure: true, // upgrade later with STARTTLS
+        host: "xxx",
+        port: 2333,
+        secure: true,
         auth: {
-            user: "noreply@eugrade.com",
+            user: "xxx",
             pass: "xxx"
         }
     });
 
     let message = {
-        from: "noreply@eugrade.com",
+        from: "xxx",
         to: receiver,
         subject: titleContent,
         text: textContent,
@@ -337,6 +322,7 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
 */
 app.post('/subscribe/mail', function (req, res) {
 
+    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -438,6 +424,7 @@ app.post('/subscribe/mail', function (req, res) {
 */
 app.post('/unsubscribe/mail', function (req, res) {
 
+    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -540,6 +527,7 @@ app.post('/unsubscribe/mail', function (req, res) {
 */
 app.post('/subscribe/mail/edit', function (req, res) {
 
+    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -670,6 +658,7 @@ app.post('/subscribe/mail/edit', function (req, res) {
 */
 app.post('/subscribe/mail/edit/info', function (req, res) {
 
+    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -786,6 +775,7 @@ app.post('/subscribe/mail/edit/info', function (req, res) {
 */
 app.get('/verify/mail/exist/:email', function (req, res) {
 
+    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -875,7 +865,7 @@ app.get('/verify/mail/exist/:email', function (req, res) {
 
 /* 定时作业 Section */
 function scheduleTasks() {
-    schedule.scheduleJob('0 0 23 * * *', function () {
+    schedule.scheduleJob('* /1 * * * *', function () {
         mailFunc();
     });
     schedule.scheduleJob('30 * * * * *', function () {

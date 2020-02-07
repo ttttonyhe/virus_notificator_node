@@ -8,7 +8,7 @@
 const request = require('request');
 const mongo = require('mongodb').MongoClient;
 const nodemailer = require("nodemailer");
-var databaseUrl = 'mongodb://localhost:27017';
+var databaseUrl = 'mongodb://root:Goodhlp_616877@localhost:27017';
 
 
 /*
@@ -16,17 +16,17 @@ var databaseUrl = 'mongodb://localhost:27017';
     */
 async function sendEmail(titleContent, textContent, htmlContent, receiver) {
     let mailer = nodemailer.createTransport({
-        host: "smtpdm.aliyun.com",
-        port: 465,
-        secure: true, // upgrade later with STARTTLS
+        host: "xxx",
+        port: 2333,
+        secure: true,
         auth: {
-            user: "noreply@eugrade.com",
+            user: "xxx",
             pass: "xxx"
         }
     });
 
     let message = {
-        from: "noreply@eugrade.com",
+        from: "xxx",
         to: receiver,
         subject: titleContent,
         text: textContent,
@@ -175,14 +175,17 @@ async function mailDaily() {
                                     dataStatus.city = false;
                                 }
 
-                                if (dataStatus.city && dataStatus.province && dataStatus.country) {
+                                if (dataStatus.city && dataStatus.province && dataStatus.country) { //全部信息都可获取
                                     var htmlContent = `<div style="width:100%;padding-bottom:50px"><div style="border:1px solid #eee;margin-bottom:40px;width:80%;margin:40px auto;border-radius:10px;box-shadow:0 1px 5px 0 rgba(0,0,0,.12)"><img src="https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg" style="max-width:100%;height:auto"></div><div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">全国数据</h3><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#f5a623;border-radius:5px">确诊人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.confirm + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#ff0100;border-radius:5px">死亡人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.death + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#006ff4;border-radius:5px">治愈人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.cured + ` 人</p></div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px;margin-top:20px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">` + receiverData.province + `数据</h3><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#f5a623;border-radius:5px">确诊人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` +
                                         receiverData.data.province.confirm + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#ff0100;border-radius:5px">死亡人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.province.death + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#006ff4;border-radius:5px">治愈人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.province.cured + ` 人</p></div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px;margin-top:20px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">` + receiverData.city + `数据</h3><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#f5a623;border-radius:5px">确诊人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.city.confirm + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#ff0100;border-radius:5px">死亡人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.city.death + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#006ff4;border-radius:5px">治愈人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.city.cured + ` 人</p></div></div></div>`;
-                                    sendEmail('推送测试邮件', '这是测试', htmlContent, receiverData.email)
-                                } else if (dataStatus.province && dataStatus.country) {
+                                    sendEmail('今日新型冠状病毒疫情数据推送', '今日新型冠状病毒肺炎疫情数据', htmlContent, receiverData.email)
+                                } else if (dataStatus.province && dataStatus.country) { //全国和省份信息可获取
                                     var htmlContent = `<div style="width:100%;padding-bottom:50px"><div style="border:1px solid #eee;margin-bottom:40px;width:80%;margin:40px auto;border-radius:10px;box-shadow:0 1px 5px 0 rgba(0,0,0,.12)"><img src="https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg" style="max-width:100%;height:auto"></div><div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">全国数据</h3><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#f5a623;border-radius:5px">确诊人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.confirm + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#ff0100;border-radius:5px">死亡人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.death + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#006ff4;border-radius:5px">治愈人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.cured + ` 人</p></div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px;margin-top:20px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">` + receiverData.province + `数据</h3><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#f5a623;border-radius:5px">确诊人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` +
                                         receiverData.data.province.confirm + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#ff0100;border-radius:5px">死亡人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.province.death + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#006ff4;border-radius:5px">治愈人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.province.cured + ` 人</p></div></div></div>`;
-                                    sendEmail('推送测试邮件', '这是测试', htmlContent, receiverData.email)
+                                    sendEmail('今日新型冠状病毒疫情数据推送', '今日新型冠状病毒肺炎疫情数据', htmlContent, receiverData.email)
+                                } else if (dataStatus.country) { //只全国信息可获取
+                                    var htmlContent = `<div style="width:100%;padding-bottom:50px"><div style="border:1px solid #eee;margin-bottom:40px;width:80%;margin:40px auto;border-radius:10px;box-shadow:0 1px 5px 0 rgba(0,0,0,.12)"><img src="https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg" style="max-width:100%;height:auto"></div><div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">全国数据</h3><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#f5a623;border-radius:5px">确诊人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.confirm + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#ff0100;border-radius:5px">死亡人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.death + ` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#006ff4;border-radius:5px">治愈人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` + receiverData.data.country.cured + ` 人</p></div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px;margin-top:20px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">数据指南</h3><p style="text-align:center;color:#666;font-size:1.2rem">你可以前往 <a href="https://ncov.ouorz.com" target="_blank">https://ncov.ouorz.com</a> 增加省份/城市订阅源</p></div></div></div>`;
+                                    sendEmail('今日新型冠状病毒疫情数据推送', '今日新型冠状病毒肺炎疫情数据', htmlContent, receiverData.email)
                                 } else {
                                     console.log('未发送:' + receiverData.email);
                                 }
