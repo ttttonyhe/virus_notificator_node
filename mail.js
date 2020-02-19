@@ -2,13 +2,13 @@
     name: Server-Side Mailing Function of Virus Notificator
     author: TonyHe
     link: https://www.ouorz.com
-    last Update: 6-2-2020
+    last Update: 19-2-2020
 */
 
 const request = require('request');
 const mongo = require('mongodb').MongoClient;
 const nodemailer = require("nodemailer");
-var databaseUrl = 'mongodb://root:Goodhlp_616877@localhost:27017';
+var databaseUrl = 'mongodb://xxx:xxx@localhost:27017';
 
 
 /*
