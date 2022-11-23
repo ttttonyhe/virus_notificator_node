@@ -8,7 +8,7 @@
 const request = require('request');
 const mongo = require('mongodb').MongoClient;
 const nodemailer = require("nodemailer");
-var databaseUrl = 'mongodb://xxx:xxx@localhost:27017';
+var databaseUrl = process.env.MONGODB_URL;
 
 
 /*
