@@ -16,17 +16,17 @@ var databaseUrl = process.env.MONGODB_URL;
     */
 async function sendEmail(titleContent, textContent, htmlContent, receiver) {
     let mailer = nodemailer.createTransport({
-        host: "xxx",
-        port: 2333,
+        host: "smtp.163.com",
+        port: 465,
         secure: true,
         auth: {
-            user: "xxx",
-            pass: "xxx"
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD
         }
     });
 
     let message = {
-        from: "xxx",
+        from: process.env.SMTP_USER,
         to: receiver,
         subject: titleContent,
         text: textContent,
@@ -60,7 +60,7 @@ async function sendEmail(titleContent, textContent, htmlContent, receiver) {
 */
 async function mailDaily() {
     global.dataObject = await new Promise((resolve, reject) => {
-        request('https://www.snapaper.com/vue/virus', function (error, response, data) {
+        request('https://files.snapaper.com/virus', function (error, response, data) {
             if (!error && response.statusCode == 200) {
                 let dataObject = JSON.parse(data.toString()); //获取
                 return resolve(dataObject);
