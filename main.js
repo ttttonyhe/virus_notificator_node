@@ -288,17 +288,17 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
     consoleMessage('准备开始发送欢迎邮件', 'start');
 
     let mailer = nodemailer.createTransport({
-        host: "xxx",
-        port: 2333,
+        host: "smtp.163.com",
+        port: 465,
         secure: true,
         auth: {
-            user: "xxx",
-            pass: "xxx"
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD
         }
     });
 
     let message = {
-        from: "xxx",
+        from: process.env.SMTP_USER,
         to: receiver,
         subject: titleContent,
         text: textContent,
@@ -322,7 +322,7 @@ var sendEmail = function (titleContent, textContent, htmlContent, receiver) {
 */
 app.post('/subscribe/mail', function (req, res) {
 
-    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
+    res.header("Access-Control-Allow-Origin", "https://virus-notificator-vue.onrender.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -424,7 +424,7 @@ app.post('/subscribe/mail', function (req, res) {
 */
 app.post('/unsubscribe/mail', function (req, res) {
 
-    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
+    res.header("Access-Control-Allow-Origin", "https://virus-notificator-vue.onrender.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -527,7 +527,7 @@ app.post('/unsubscribe/mail', function (req, res) {
 */
 app.post('/subscribe/mail/edit', function (req, res) {
 
-    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
+    res.header("Access-Control-Allow-Origin", "https://virus-notificator-vue.onrender.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -658,7 +658,7 @@ app.post('/subscribe/mail/edit', function (req, res) {
 */
 app.post('/subscribe/mail/edit/info', function (req, res) {
 
-    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
+    res.header("Access-Control-Allow-Origin", "https://virus-notificator-vue.onrender.com");
     let returnArray = {
         status: false,
         code: 0,
@@ -775,7 +775,7 @@ app.post('/subscribe/mail/edit/info', function (req, res) {
 */
 app.get('/verify/mail/exist/:email', function (req, res) {
 
-    res.header("Access-Control-Allow-Origin", "https://ncov.ouorz.com");
+    res.header("Access-Control-Allow-Origin", "https://virus-notificator-vue.onrender.com");
     let returnArray = {
         status: false,
         code: 0,
