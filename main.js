@@ -13,7 +13,7 @@ const schedule = require('node-schedule');
 const bodyParser = require('body-parser');
 const Feed = require('feed').Feed;
 const mailFunc = require('./mail');
-var databaseUrl = 'mongodb://xxx:xxx@localhost:27017';
+var databaseUrl = process.env.MONGODB_URL;
 
 
 //新建 Express 实例
