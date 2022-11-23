@@ -887,7 +887,7 @@ function scheduleTasks() {
 scheduleTasks();
 /* 定时作业 Section */
 
-app.listen(2333, function () {
+app.listen(process.env.PORT || 2333, function () {
     console.log('app is listening at port 2333');
 });
 /* 服务部署 Section */
