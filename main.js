@@ -71,10 +71,10 @@ var getFeed = function () {
 	const feed = new Feed({
 		title: "COVID-19 疫情数据",
 		description: "COVID-19 疫情数据实时更新推送",
-		id: "https://ncov.ouorz.com/",
-		link: "https://ncov.ouorz.com/",
+		id: "https://virus-notificator-vue.onrender.com/",
+		link: "https://virus-notificator-vue.onrender.com/",
 		image: "https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg",
-		favicon: "https://ncov.ouorz.com/favicon.ico",
+		favicon: "https://virus-notificator-vue.onrender.com/favicon.ico",
 		copyright: "All rights reserved 2019, TonyHe",
 		feedLinks: {
 			json: "https://node.ouorz.com/json",

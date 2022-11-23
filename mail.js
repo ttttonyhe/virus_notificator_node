@@ -273,7 +273,7 @@ async function mailDaily() {
 												receiverData.data.country.death +
 												` 人</p><p style="text-align:center;color:#666;font-size:1.2rem"><b style="color:#006ff4;border-radius:5px">治愈人数</b><em style="color:#999">&nbsp;&nbsp;|</em>&nbsp;&nbsp;` +
 												receiverData.data.country.cured +
-												` 人</p></div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px;margin-top:20px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">数据指南</h3><p style="text-align:center;color:#666;font-size:1.2rem">你可以前往 <a href="https://ncov.ouorz.com" target="_blank">https://ncov.ouorz.com</a> 增加省份/城市订阅源</p></div></div></div>`;
+												` 人</p></div><div style="border:1px solid #eee;width:80%;margin:0 auto;border-radius:10px;margin-top:20px"><h3 style="text-align:center;background:#f1f2f3;font-size:1.4rem;font-weight:500;color:#666;padding:5px 0 8px 0;letter-spacing:1px;margin-top: 0px;">数据指南</h3><p style="text-align:center;color:#666;font-size:1.2rem">你可以前往 <a href="https://virus-notificator-vue.onrender.com" target="_blank">https://virus-notificator-vue.onrender.com</a> 增加省份/城市订阅源</p></div></div></div>`;
 											sendEmail(
 												"今日新型冠状病毒疫情数据推送",
 												"今日新型冠状病毒肺炎疫情数据",
