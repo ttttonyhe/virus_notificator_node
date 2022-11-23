@@ -69,8 +69,8 @@ request("https://files.snapaper.com/virus", function (error, response, data) {
 var getFeed = function () {
 	/* RSS Feed 生成 */
 	const feed = new Feed({
-		title: "2019-nCov 疫情数据",
-		description: "2019-nCov 疫情数据实时更新推送",
+		title: "COVID-19 疫情数据",
+		description: "COVID-19 疫情数据实时更新推送",
 		id: "https://ncov.ouorz.com/",
 		link: "https://ncov.ouorz.com/",
 		image: "https://i.loli.net/2020/02/05/b3adxQsVHX6voY4.jpg",
