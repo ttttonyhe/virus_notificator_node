@@ -51,7 +51,7 @@ var consoleMessage = function (title, type) {
     name: 取得 PHP 爬取数据
 */
 consoleMessage('开始请求最新数据', 'start');
-request('https://www.snapaper.com/vue/virus', function (error, response, data) {
+request('https://files.snapaper.com/virus', function (error, response, data) {
     if (!error && response.statusCode == 200) {
         global.dataObject = JSON.parse(data.toString()); //获取
         global.requestStatus = true;
@@ -870,7 +870,7 @@ function scheduleTasks() {
     });
     schedule.scheduleJob('30 * * * * *', function () {
         consoleMessage('开始请求最新数据', 'start');
-        request('https://www.snapaper.com/vue/virus', function (error, response, data) {
+        request('https://files.snapaper.com/virus', function (error, response, data) {
             if (!error && response.statusCode == 200) {
                 global.dataObject = JSON.parse(data.toString()); //获取
                 global.requestStatus = true;
